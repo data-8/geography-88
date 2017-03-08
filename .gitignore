@@ -5,3 +5,9 @@ _pycache*/
 *.pyc
 
 *.zip
+
+*.html
+
+ca.svg
+
+*.svg
