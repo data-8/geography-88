@@ -4,6 +4,7 @@ import shapely.geometry
 import matplotlib.collections as mpc
 from matplotlib.patches import Polygon
 from matplotlib.path import Path
+from matplotlib.lines import Line2D
 import numpy as np
 
 
@@ -50,23 +51,41 @@ def plot_polygons(gdf, column=None, cmap='Set1', facecolor=None, edgecolor=None,
 
 def plot_lines(gdf, column=None, cmap='Set1', facecolor=None, edgecolor=None,
                             alpha=1.0, linewidth=0.5, **kwargs):
-
+    lines = []
+    newvals = []
     geoms = gdf.geometry
-    lines = [Path(np.asarray(line)) for line in geoms]
-
     if column is not None:
         values = gdf[column]
     else:
         values = None
 
-    lines = mpc.PathCollection(lines, facecolor=facecolor, linewidth=linewidth,
+    for linenum in range(len(geoms)):
+        line = geoms.iloc[linenum]
+        if type(line) == shapely.geometry.multilinestring.MultiLineString:
+            for currline in line.geoms:
+                #x = [__[0] for __ in currline.coords]
+                #y = [__[1] for __ in currline.coords]
+                #lines.append(Line2D(x, y))
+                lines.append(np.asarray(currline.coords))
+                if values is not None:
+                    newvals.append(values.iloc[linenum])
+        elif type(line) == shapely.geometry.linestring.LineString:
+            #x = [__[0] for __ in line.coords]
+            #y = [__[1] for __ in line.coords]
+            #lines.append(Line2D(x, y))
+            lines.append(np.asarray(line.coords))
+            if values is not None:
+                newvals.append(values.iloc[linenum])
+        else: pass
+
+    lines = mpc.LineCollection(lines, facecolors='none', linewidth=linewidth,
                                   edgecolor=edgecolor, alpha=alpha, **kwargs)
     if values is not None:
-        patches.set_array(np.asarray(values))
-        patches.set_cmap(cmap)
+        lines.set_array(np.asarray(values))
+        lines.set_cmap(cmap)
         norm = matplotlib.colors.Normalize()
         norm.autoscale(values)
-        patches.set_norm(norm)
+        lines.set_norm(norm)
     plt.gca().add_collection(lines, autolim=True)
     plt.gca().set_aspect('equal')
     plt.gca().autoscale_view()
@@ -94,7 +113,7 @@ def quickplot(gdf, column=None, cmap='Set1',
     if layer_type == shapely.geometry.point.Point:
         plot_points(gdf, **kwargs)
 
-    elif layer_type == shapely.geometry.linestring.LineString:
+    elif layer_type == shapely.geometry.linestring.LineString or layer_type == shapely.geometry.multilinestring.MultiLineString:
         plot_lines(gdf, column, cmap, facecolor, edgecolor, alpha, linewidth, **kwargs)
 
     else:
