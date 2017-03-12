@@ -44,10 +44,10 @@ def apportion(pops, states, seats_to_assign=435, initial=1, extras=2, exclude='D
 
 # Determine election outcome
 def run_election(df, statevar='state', pop='population', ev='ev'):
-    states = make_states(df, statevar)
-    states[ev] = apportion(states[pop], states[statevar])
-    return {'gop': sum(states.ev[states.win == 'R']), 
-            'dem': sum(states.ev[states.win == 'D'])}
+    # states = make_states(df, statevar)
+    df[ev] = apportion(df[pop], df[statevar])
+    return {'gop': sum(df.ev[df.win == 'R']), 
+            'dem': sum(df.ev[df.win == 'D'])}
     
 
 # returns a list of random county ids
