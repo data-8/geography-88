@@ -55,15 +55,21 @@ def get_seeds(e, graph, method='default'):
     state_ids = list(set(e.state))
     random.shuffle(state_ids)
     seeds = []
-    for s in state_ids:
-        this_state = [n[0] for n in graph.nodes(data=True) if n[1]['state'] == s]
-        seeds.append(random.choice(this_state))
-    return seeds, state_ids
-    
+    if method=='default':
+        for s in state_ids:
+            this_state = [n[0] for n in graph.nodes(data=True) if n[1]['state'] == s]
+            seeds.append(random.choice(this_state))
+        return seeds, state_ids
+    elif method=='pop':
+        for s in state_ids:    
+            this_state = [(n[1]['pop'], n[0]) for n in graph.nodes(data=True) if n[1]['state'] == s]
+            this_state.sort()
+            seeds.append(this_state[-1][1])
+        return seeds, state_ids
 
 # We are going to store the neighborhood relations
 # in a graph data structure provided by networkx
-def random_states(e_map, reqd=''):
+def random_states(e_map, method='default', reqd=''):
     G = nx.Graph()
 
     # neighborhoods determined by pysal operation
@@ -80,10 +86,11 @@ def random_states(e_map, reqd=''):
     # and now add the state affiliation of each as a node attribute
     for i in G.nodes():
         G.node[i]['state'] = e_map.loc[i].state
+        G.node[i]['pop'] = e_map.loc[i].population
     
     if reqd == 'graph': return G
     
-    seed_counties, state_ids = get_seeds(e_map, G)
+    seed_counties, state_ids = get_seeds(e_map, G, method=method)
 
     # now make a dictionary recording for each node
     # shortest path, the source seed, and state ID
