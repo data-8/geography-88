@@ -67,12 +67,10 @@ def get_seeds(e, graph, method='default'):
             seeds.append(this_state[-1][1])
         return seeds, state_ids
 
-# We are going to store the neighborhood relations
-# in a graph data structure provided by networkx
-def random_states(e_map, method='default', reqd=''):
-    G = nx.Graph()
 
-    # neighborhoods determined by pysal operation
+def make_graph(e_map):
+    G = nx.Graph()
+    # pysal operation
     neighbors = ps.weights.Contiguity.Rook.from_dataframe(e_map)
 
     # now make the graph, add nodes first
@@ -88,19 +86,33 @@ def random_states(e_map, method='default', reqd=''):
         G.node[i]['state'] = e_map.loc[i].state
         G.node[i]['pop'] = e_map.loc[i].population
     
-    if reqd == 'graph': return G
+    # now make DC into an island by removing all edges including it
+    for e in G.edges():
+        if G.node[e[0]]['state'] == 'DC' or G.node[e[1]]['state'] == 'DC':
+            G.remove_edge(*e)
     
-    seed_counties, state_ids = get_seeds(e_map, G, method=method)
+    return (G, neighbors)
+    
+    
+# We are going to store the neighborhood relations
+# in a graph data structure provided by networkx
+def random_states(e_map, GN=None, method='default'):
+    if GN is None:
+        graph, neighbors = make_graph(e_map)
+    else:
+        graph, neighbors = GN
+
+    seed_counties, state_ids = get_seeds(e_map, graph, method=method)
 
     # now make a dictionary recording for each node
     # shortest path, the source seed, and state ID
     # initialize these to very long (1000), -1 (non-existent) and 'XX'
-    node_shortest_paths = {n: (1000, -1, "XX") for n in G.nodes()}
+    node_shortest_paths = {n: (1000, -1, "XX") for n in graph.nodes()}
     for x in neighbors.islands:
         node_shortest_paths[x] = (0, 0, e_map.loc[x].state)
     
     # Determine shortest paths to all nodes from the seed counties
-    distances_from_seeds = [nx.single_source_shortest_path_length(G, n) for n in seed_counties]
+    distances_from_seeds = [nx.single_source_shortest_path_length(graph, n) for n in seed_counties]
     # Now iterate
     for (seed, distances, state_id) in zip(seed_counties, distances_from_seeds, state_ids):
         for target, d in distances.items():
@@ -111,17 +123,18 @@ def random_states(e_map, method='default', reqd=''):
     return nearest_states
 
 
-def draw_graph(e_map, G):
+def draw_graph(e_map, GN):
     import geopandas as gpd
     import shapely
     import matplotlib.pyplot as plt
     import quickplot as qp
     
+    G, neighbors = GN
     centroids = e_map.geometry.centroid
     n_links = gpd.GeoSeries([shapely.geometry.linestring.LineString(
                 [centroids.geometry[e[0]], 
                 centroids.geometry[e[1]]]) for e in G.edges()])
-    fig = plt.figure(figsize=(16,12))
+    fig = plt.figure(figsize=(12,9))
     qp.quickplot(e_map, facecolor='w', edgecolor='k', linewidth=0.2)
     qp.quickplot(n_links, edgecolor='#ff0000', linewidth=0.35)
     qp.quickplot(centroids, markersize=1, color='r')
