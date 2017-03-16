@@ -71,6 +71,7 @@ def get_seeds(e, graph, method='default'):
 def make_graph(e_map, src='election.shp'):
     G = nx.Graph()
     # pysal operation
+    # this initialization works in both 1.11.1 and 1.13
     neighbors = ps.rook_from_shapefile(src)
     
     # now make the graph, add nodes first
