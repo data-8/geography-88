@@ -68,11 +68,11 @@ def get_seeds(e, graph, method='default'):
         return seeds, state_ids
 
 
-def make_graph(e_map):
+def make_graph(e_map, src='election.shp'):
     G = nx.Graph()
     # pysal operation
-    neighbors = ps.weights.Contiguity.Rook.from_dataframe(e_map)
-
+    neighbors = ps.rook_from_shapefile(src)
+    
     # now make the graph, add nodes first
     G.add_nodes_from(range(len(e_map.state)))
     # now read the pysal neighbors structure
