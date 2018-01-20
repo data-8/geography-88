@@ -19,3 +19,12 @@ ca.svg
 _map.html
 
 ca.svg
+data/*
+docker/*
+other-stuff/*
+other-stuff/*.*
+session4/islands.*
+
+other-stuff/hexbins.ipynb
+
+other-stuff/pinwheel.py
