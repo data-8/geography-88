@@ -88,9 +88,12 @@ def make_graph(e_map, src='election.shp'):
         G.node[i]['pop'] = e_map.loc[i].population
     
     # now make DC into an island by removing all edges including it
+    to_remove = []
     for e in G.edges():
         if G.node[e[0]]['state'] == 'DC' or G.node[e[1]]['state'] == 'DC':
-            G.remove_edge(*e)
+            to_remove.append(e)
+    for e in to_remove:
+        G.remove_edge(*e)
     
     return (G, neighbors)
     
